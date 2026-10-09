@@ -15,9 +15,15 @@ export const EMPTY_PARTICIPANT_DRAFT: ParticipantDraft = {
   gender: "",
 };
 
+/** Same rule as the API: DNI = 8 digits; CE and passport = 6 to 12 letters or digits. */
+function validateDocumentNumber(draft: Pick<ParticipantDraft, "idType" | "idNumber">): string | null {
+  if (draft.idType === "dni") return /^\d{8}$/.test(draft.idNumber) ? null : "El DNI debe tener 8 dígitos.";
+  return /^[A-Za-z0-9]{6,12}$/.test(draft.idNumber) ? null : "El CE o pasaporte debe tener de 6 a 12 letras o números.";
+}
+
 function validateIdentity(draft: Pick<ParticipantDraft, "idType" | "idNumber" | "firstName" | "lastName">): string | null {
-  if (draft.idType === "dni" && !/^\d{8}$/.test(draft.idNumber)) return "El DNI debe tener 8 dígitos.";
-  if (draft.idType !== "dni" && draft.idNumber.trim().length < 6) return "Ingresa un número de documento válido.";
+  const documentError = validateDocumentNumber(draft);
+  if (documentError) return documentError;
   if (!draft.firstName.trim() || !draft.lastName.trim()) return "Ingresa nombres y apellidos.";
   return null;
 }
@@ -34,5 +40,8 @@ export function validateParticipantDraft(draft: ParticipantDraft): string | null
 }
 
 export function validateSpecialDraft(draft: SpecialDraft): string | null {
-  return validateIdentity(draft) ?? (draft.institution.trim() ? null : "Ingresa la institución o el servicio.");
+  const documentError = validateDocumentNumber(draft);
+  if (documentError) return documentError;
+  if (!draft.firstName.trim() || !draft.paternalLastName.trim()) return "Ingresa nombres y apellido paterno.";
+  return draft.institution.trim() ? null : "Ingresa la institución o el servicio.";
 }

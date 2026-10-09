@@ -98,6 +98,8 @@ export interface Participant {
   access?: AccessLevel;
   documents: ParticipantDocument[];
   credential?: Credential;
+  /** Stored and recalculated by the API. Mock data has none: use getParticipantStatus. */
+  status?: ParticipantStatus;
   createdAt: string;
 }
 
@@ -118,10 +120,20 @@ export type ParticipantDraft = Pick<Participant, "idType" | "idNumber" | "firstN
   gender: string;
 };
 
-export type SpecialDraft = Pick<Participant, "idType" | "idNumber" | "firstName" | "lastName" | "type"> & {
+/** Special credential form. Access comes from the type (API catalog), not from the form. */
+export type SpecialDraft = Pick<Participant, "idType" | "idNumber" | "firstName" | "type"> & {
+  paternalLastName: string;
+  maternalLastName: string;
   institution: string;
-  access: AccessLevel;
 };
+
+/** Participant type from the API catalog: `id` is what the API expects when writing. */
+export interface ParticipantTypeInfo {
+  id: string;
+  type: ParticipantType;
+  special: boolean;
+  access?: AccessLevel;
+}
 
 /** What a queue row still needs, as data so the UI can give each document its own weight. */
 export interface PendingSummary {

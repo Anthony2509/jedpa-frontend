@@ -1,8 +1,16 @@
 "use client";
 
-import { useStore } from "@/shared/lib/useStore";
-import { usersStore } from "../services/usersApi";
+import { useState } from "react";
+import { useApiQuery } from "@/shared/lib/useApiQuery";
+import { ROLES_QUERY, USERS_QUERY, fetchRoleOptions, fetchUsers } from "../services/usersApi";
 
+/** One page of users from the API. */
 export function useUsers() {
-  return useStore(usersStore);
+  const [page, setPage] = useState(1);
+  const query = useApiQuery(`${USERS_QUERY}?page=${page}`, () => fetchUsers(page));
+  return { ...query, page, setPage };
+}
+
+export function useRoleOptions() {
+  return useApiQuery(ROLES_QUERY, fetchRoleOptions).data ?? [];
 }

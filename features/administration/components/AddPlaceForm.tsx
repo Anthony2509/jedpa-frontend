@@ -5,11 +5,12 @@ import { TextInput } from "@/shared/ui/TextInput";
 
 interface AddPlaceFormProps {
   value: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
   onSubmit: () => void;
 }
 
-export function AddPlaceForm({ value, onChange, onSubmit }: AddPlaceFormProps) {
+export function AddPlaceForm({ value, disabled, onChange, onSubmit }: AddPlaceFormProps) {
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     onSubmit();
@@ -17,7 +18,7 @@ export function AddPlaceForm({ value, onChange, onSubmit }: AddPlaceFormProps) {
   return (
     <form onSubmit={handleSubmit} className="mb-4 flex max-w-xl gap-2">
       <TextInput value={value} placeholder="Nombre del nuevo lugar" onChange={(e) => onChange(e.target.value)} />
-      <Button type="submit" icon={<Plus className="size-4" />} disabled={!value.trim()}>
+      <Button type="submit" icon={<Plus className="size-4" />} disabled={disabled || !value.trim()}>
         Agregar
       </Button>
     </form>

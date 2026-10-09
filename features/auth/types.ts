@@ -18,3 +18,9 @@ export interface User {
   role: Role;
   active: boolean;
 }
+
+export interface SessionState {
+  /** "loading" until the saved token is checked against the API. */
+  status: "loading" | "authenticated" | "anonymous";
+  user: User | null;
+}

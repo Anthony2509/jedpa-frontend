@@ -12,6 +12,7 @@ export type {
   ParticipantDocument,
   ParticipantStatus,
   ParticipantType,
+  ParticipantTypeInfo,
   PendingSummary,
   SpecialDraft,
 } from "./types";
@@ -24,6 +25,7 @@ export { DOCUMENT_STATUS_META, DOCUMENT_TYPES, DOCUMENT_TYPE_LABELS, OPTIONAL_DO
 export {
   ACCESS_LABELS,
   DEFAULT_ACCESS,
+  IDENTITY_TYPES,
   IDENTITY_TYPE_LABELS,
   PARTICIPANT_TYPES,
   PARTICIPANT_TYPE_LABELS,
@@ -53,7 +55,12 @@ export { useParticipantFilters } from "./hooks/useParticipantFilters";
 export { approveDocument, confirmInResolution, observeDocument, uploadDocument } from "./services/documentsApi";
 export { issueCredential, printCredential, printDuplicate } from "./services/credentialsApi";
 export { deliverCredential } from "./services/deliveriesApi";
-export { convertToCompanion, createSpecialParticipant } from "./services/registrationApi";
+export { convertToCompanion } from "./services/registrationApi";
+
+// Data access (API)
+export { createSpecialParticipant } from "./services/participantsApi";
+export { useParticipantTypes } from "./hooks/useParticipantTypes";
+export { useParticipantsByTypes } from "./hooks/useParticipantsByTypes";
 
 // UI
 export { IdentityFields } from "./components/IdentityFields";

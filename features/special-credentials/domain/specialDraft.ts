@@ -1,11 +1,11 @@
-import { DEFAULT_ACCESS, type SpecialDraft } from "@/features/participants";
+import type { SpecialDraft } from "@/features/participants";
 
 export const EMPTY_SPECIAL_DRAFT: SpecialDraft = {
   idType: "dni",
   idNumber: "",
   firstName: "",
-  lastName: "",
+  paternalLastName: "",
+  maternalLastName: "",
   type: "guest",
   institution: "",
-  access: DEFAULT_ACCESS.guest,
 };

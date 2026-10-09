@@ -1,5 +1,4 @@
 import {
-  ACCESS_LABELS,
   PARTICIPANT_TYPE_LABELS,
   ParticipantIdentity,
   ParticipantStatusBadge,
@@ -10,13 +9,13 @@ import {
   type Participant,
 } from "@/features/participants";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
+import { getAccessLabel } from "../domain/accessLabel";
 
 interface SpecialsTableProps {
   participants: Participant[];
-  onOpen: (participant: Participant) => void;
 }
 
-const accessOf = (p: Participant) => (p.access ? ACCESS_LABELS[p.access] : "—");
+const statusOf = (p: Participant) => p.status ?? getParticipantStatus(p);
 
 const COLUMNS: Column<Participant>[] = [
   {
@@ -25,9 +24,9 @@ const COLUMNS: Column<Participant>[] = [
     className: "hidden",
     mobile: "title",
     render: (p) => (
-      <ParticipantSummary participant={p} context={`${PARTICIPANT_TYPE_LABELS[p.type]} · ${accessOf(p)}`}>
+      <ParticipantSummary participant={p} context={`${PARTICIPANT_TYPE_LABELS[p.type]} · ${getAccessLabel(p.access)}`}>
         <p className="text-[13px] leading-snug text-neutral-700">{p.institution}</p>
-        <ParticipantStatusBadge status={getParticipantStatus(p)} />
+        <ParticipantStatusBadge status={statusOf(p)} />
       </ParticipantSummary>
     ),
   },
@@ -40,21 +39,24 @@ const COLUMNS: Column<Participant>[] = [
     render: (p) => (
       <div className="leading-snug">
         <p className="text-neutral-900">{PARTICIPANT_TYPE_LABELS[p.type]}</p>
-        <p className="text-xs text-neutral-500">{accessOf(p)}</p>
+        <p className="text-xs text-neutral-500">{getAccessLabel(p.access)}</p>
       </div>
     ),
   },
   { key: "institution", header: "Servicio / Institución", mobile: "hidden", render: (p) => <span className="text-neutral-700">{p.institution}</span> },
-  { key: "status", header: "Estado", className: "w-[14%]", mobile: "hidden", render: (p) => <ParticipantStatusBadge status={getParticipantStatus(p)} /> },
+  { key: "status", header: "Estado", className: "w-[14%]", mobile: "hidden", render: (p) => <ParticipantStatusBadge status={statusOf(p)} /> },
 ];
 
-export function SpecialsTable({ participants, onOpen }: SpecialsTableProps) {
+/**
+ * TEMP(backend): rows don't open the record yet. The record (/participants/[id]) still reads
+ * mock data and would not find API participants; connect it in the next step.
+ */
+export function SpecialsTable({ participants }: SpecialsTableProps) {
   return (
     <DataTable
       columns={COLUMNS}
       rows={participants}
       getRowKey={(p) => p.id}
-      onRowClick={onOpen}
       emptyMessage="Todavía no hay credenciales especiales. Crea la primera con el botón de arriba."
     />
   );

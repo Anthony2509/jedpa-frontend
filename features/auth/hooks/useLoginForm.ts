@@ -1,15 +1,29 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "../services/session";
+import { getErrorMessage } from "@/shared/lib/apiClient";
+import { login, restoreSession } from "../services/session";
+import { useSession } from "./useCurrentUser";
+
+const HOME = "/dashboard";
 
 export function useLoginForm() {
   const router = useRouter();
+  const { status } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // An open session (same tab) skips the login screen.
+  useEffect(() => {
+    void restoreSession();
+  }, []);
+
+  useEffect(() => {
+    if (status === "authenticated") router.replace(HOME);
+  }, [status, router]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -17,9 +31,8 @@ export function useLoginForm() {
     setError(null);
     try {
       await login(email, password);
-      router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo iniciar sesión.");
+      setError(getErrorMessage(err, "No se pudo iniciar sesión."));
       setSubmitting(false);
     }
   }
