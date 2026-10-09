@@ -10,6 +10,7 @@ interface QueryEntry {
   error?: string;
   /** Marked by invalidateQueries: refetched on the next render, keeping the old data meanwhile. */
   stale: boolean;
+  loadedAt?: number;
 }
 
 /**
@@ -27,9 +28,9 @@ async function load(key: string, fetcher: () => Promise<unknown>): Promise<void>
   inFlight.add(key);
   const previous = queryCache.getSnapshot()[key];
   try {
-    setEntry(key, { data: await fetcher(), stale: false });
+    setEntry(key, { data: await fetcher(), stale: false, loadedAt: Date.now() });
   } catch (error) {
-    setEntry(key, { data: previous?.data, error: getErrorMessage(error), stale: false });
+    setEntry(key, { data: previous?.data, error: getErrorMessage(error), stale: false, loadedAt: Date.now() });
   } finally {
     inFlight.delete(key);
   }
@@ -47,18 +48,24 @@ export function clearQueryCache(): void {
   queryCache.update(() => ({}));
 }
 
+interface QueryOptions {
+  /** Refetch on render once the data is older than this (for values that change elsewhere, like counters). */
+  maxAgeMs?: number;
+}
+
 /**
  * Loads `fetcher` once per key and shares the result between components.
  * Pass `null` as key to wait (for example, until another query returns an id).
  */
-export function useApiQuery<T>(key: string | null, fetcher: () => Promise<T>) {
+export function useApiQuery<T>(key: string | null, fetcher: () => Promise<T>, options: QueryOptions = {}) {
   const cache = useStore(queryCache);
   const entry = key ? cache[key] : undefined;
 
   useEffect(() => {
     if (!key || inFlight.has(key)) return;
     const current = queryCache.getSnapshot()[key];
-    if (!current || current.stale) void load(key, fetcher);
+    const expired = options.maxAgeMs !== undefined && Date.now() - (current?.loadedAt ?? 0) > options.maxAgeMs;
+    if (!current || current.stale || expired) void load(key, fetcher);
   });
 
   return {

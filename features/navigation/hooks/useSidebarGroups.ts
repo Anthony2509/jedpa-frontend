@@ -2,14 +2,14 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { hasPermission, useCurrentUser } from "@/features/auth";
-import { WORK_QUEUES, getWorkQueue, parseWorkQueueId, useParticipants } from "@/features/participants";
+import { WORK_QUEUES, parseWorkQueueId, useQueueCounts } from "@/features/participants";
 import type { SidebarGroup, SidebarItem } from "@/shared/ui/layout/Sidebar";
 import { PROCESS_QUEUES, STATIC_GROUPS, isActivePath, type NavigationGroup } from "../domain/navigationItems";
 
 export function useSidebarGroups(): SidebarGroup[] {
   const pathname = usePathname();
   const fromQueue = parseWorkQueueId(useSearchParams().get("from"));
-  const participants = useParticipants();
+  const counts = useQueueCounts();
   const { role } = useCurrentUser();
 
   // A record opened from a queue keeps that process step highlighted.
@@ -27,9 +27,10 @@ export function useSidebarGroups(): SidebarGroup[] {
     return {
       href: meta.href,
       label: meta.label,
+      shortLabel: meta.shortLabel,
       icon: null,
       step: meta.step,
-      badge: getWorkQueue(queue, participants).length,
+      badge: counts?.[queue],
       active: isActive(meta.href),
     };
   });

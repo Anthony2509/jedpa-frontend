@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export type RecordDialog = "history" | "reprint" | null;
+export type RecordDialog = "history" | "reprint" | "edit" | null;
 
 export function useRecordDialogs() {
   const [dialog, setDialog] = useState<RecordDialog>(null);

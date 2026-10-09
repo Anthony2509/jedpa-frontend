@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { describeDiscipline, useParticipants } from "@/features/participants";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { MockDataNotice } from "@/shared/ui/MockDataNotice";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { BulkDeliveryModal } from "../components/BulkDeliveryModal";
 import { DelegationActions } from "../components/DelegationActions";
@@ -31,6 +32,7 @@ export function DelegationDetailContainer() {
         title={delegation.code}
         description={`${describeDiscipline(info)}, categoría ${info.category} · ${delegation.members.length} integrantes`}
       />
+      <MockDataNotice />
       <DelegationActions
         readyToPrint={delegation.readyToPrint}
         toDeliver={delegation.toDeliver}

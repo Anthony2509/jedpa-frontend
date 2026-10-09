@@ -1,29 +1,6 @@
-import type { AccessLevel, IdentityType, Participant, ParticipantStatus, ParticipantType, ParticipantTypeInfo, SpecialDraft } from "../types";
-import type { CreateSpecialParticipantDto, ParticipantDto, ParticipantTypeDto } from "./participantDtos";
-
-const TYPE_FROM_API: Record<string, ParticipantType> = {
-  DEPORTISTA: "athlete",
-  ACOMPANANTE: "companion",
-  DELEGADO: "delegate",
-  ENTRENADOR: "coach",
-  MINEDU: "minedu",
-  INVITADO: "guest",
-  PROVEEDOR_TOTAL: "supplier_full",
-  PROVEEDOR_PARCIAL: "supplier_partial",
-};
-
-const IDENTITY_FROM_API: Record<ParticipantDto["documentType"], IdentityType> = { DNI: "dni", CE: "ce", PASAPORTE: "passport" };
-const IDENTITY_TO_API: Record<IdentityType, ParticipantDto["documentType"]> = { dni: "DNI", ce: "CE", passport: "PASAPORTE" };
-
-/** The API has no "issued" step yet (backend status §5, point 6). */
-const STATUS_FROM_API: Record<string, ParticipantStatus> = {
-  PENDING_DOCUMENTS: "pending_documents",
-  IN_REVIEW: "in_review",
-  OBSERVED: "observed",
-  READY_TO_PRINT: "ready_to_print",
-  PRINTED: "printed",
-  DELIVERED: "delivered",
-};
+import type { AccessLevel, DelegationInfo, MacroId, Participant, ParticipantTypeInfo } from "../types";
+import { GENDER_FROM_API, IDENTITY_FROM_API, STATUS_FROM_API, TYPE_FROM_API } from "./apiCodes";
+import type { DelegationDto, ParticipantDto, ParticipantTypeDto } from "./participantDtos";
 
 const accessFromApi = (level: ParticipantTypeDto["accessLevel"]): AccessLevel | undefined =>
   level === "TOTAL" ? "total" : level === "PARTIAL" ? "partial" : undefined;
@@ -33,7 +10,20 @@ export function toParticipantTypeInfo(dto: ParticipantTypeDto): ParticipantTypeI
   return { id: dto.id, type: TYPE_FROM_API[dto.code] ?? "guest", special: dto.category === "SPECIAL", access: accessFromApi(dto.accessLevel) };
 }
 
-/** Only the fields the connected screens use; documents and credential still come from mocks. */
+function toDelegationInfo(dto: DelegationDto, region: string | null): DelegationInfo {
+  return {
+    macro: dto.macroRegion.code as MacroId,
+    region: region ?? "",
+    sport: dto.sport.name,
+    sportCode: dto.sport.code,
+    category: dto.category,
+    gender: dto.gender,
+    delegationId: dto.id,
+    macroRegionId: dto.macroRegion.id,
+  };
+}
+
+/** List row. Documents and copies are loaded only for the record (see recordMapper). */
 export function toParticipant(dto: ParticipantDto): Participant {
   return {
     id: dto.id,
@@ -43,23 +33,21 @@ export function toParticipant(dto: ParticipantDto): Participant {
     lastName: [dto.paternalLastName, dto.maternalLastName].filter(Boolean).join(" "),
     type: toParticipantTypeInfo(dto.participantType).type,
     school: dto.schoolName ?? undefined,
+    delegation: dto.delegation ? toDelegationInfo(dto.delegation, dto.region) : undefined,
     institution: dto.institution ?? undefined,
     access: accessFromApi(dto.participantType.accessLevel),
     documents: [],
     status: STATUS_FROM_API[dto.status],
+    api: {
+      participantTypeId: dto.participantTypeId,
+      paternalLastName: dto.paternalLastName,
+      maternalLastName: dto.maternalLastName,
+      birthDate: dto.birthDate,
+      gender: dto.gender ? GENDER_FROM_API[dto.gender] : null,
+      region: dto.region,
+      schoolName: dto.schoolName,
+      isActive: dto.isActive,
+    },
     createdAt: dto.createdAt,
-  };
-}
-
-export function toCreateSpecialDto(draft: SpecialDraft, participantTypeId: string): CreateSpecialParticipantDto {
-  const maternalLastName = draft.maternalLastName.trim();
-  return {
-    documentType: IDENTITY_TO_API[draft.idType],
-    documentNumber: draft.idNumber.trim(),
-    firstNames: draft.firstName.trim(),
-    paternalLastName: draft.paternalLastName.trim(),
-    ...(maternalLastName ? { maternalLastName } : {}),
-    participantTypeId,
-    institution: draft.institution.trim(),
   };
 }

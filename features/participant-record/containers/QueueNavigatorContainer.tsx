@@ -1,6 +1,6 @@
 "use client";
 
-import { WORK_QUEUES, useParticipants, type Participant, type WorkQueueId } from "@/features/participants";
+import { WORK_QUEUES, isMockParticipantId, useParticipants, useWorkQueueParticipants, type Participant, type WorkQueueId } from "@/features/participants";
 import { QueueNavigator } from "../components/QueueNavigator";
 import { getQueuePosition } from "../domain/queueNavigation";
 
@@ -10,7 +10,10 @@ interface QueueNavigatorContainerProps {
 }
 
 export function QueueNavigatorContainer({ queue, participant }: QueueNavigatorContainerProps) {
-  const position = getQueuePosition(queue, useParticipants(), participant);
+  const mockParticipants = useParticipants();
+  const apiQueue = useWorkQueueParticipants(queue).data?.participants;
+  const participants = isMockParticipantId(participant.id) ? mockParticipants : (apiQueue ?? []);
+  const position = getQueuePosition(queue, participants, participant);
   const meta = WORK_QUEUES[queue];
   return (
     <QueueNavigator

@@ -1,49 +1,48 @@
 import { Field } from "@/shared/ui/Field";
-import { Select } from "@/shared/ui/Select";
+import { Select, type SelectOption } from "@/shared/ui/Select";
 import { TextInput } from "@/shared/ui/TextInput";
-import { GENDER_LABELS, MACROS, buildDelegationCode } from "../domain/macros";
-import { CATEGORIES, SPORTS } from "../domain/sports";
-import type { Gender, MacroId, ParticipantDraft } from "../types";
+import { GENDER_LABELS } from "../domain/macros";
+import { CATEGORIES } from "../domain/sports";
+import type { Gender, ParticipantDraft } from "../types";
 
-type DelegationKey = "macro" | "region" | "sport" | "category" | "gender" | "school";
+type DelegationKey = "macroRegionId" | "region" | "sportId" | "category" | "gender" | "school";
 
 interface DelegationFieldsProps {
   draft: ParticipantDraft;
+  macroOptions: SelectOption[];
+  sportOptions: SelectOption[];
+  /** Code of the delegation the data points to (M1-AJD-B-D), once complete. */
+  delegationCode: string | null;
   onChange: (key: DelegationKey, value: string) => void;
 }
 
-const options = (values: string[]) => values.map((value) => ({ value, label: value }));
+const CATEGORY_OPTIONS = CATEGORIES.map((value) => ({ value, label: value }));
 const GENDER_OPTIONS = (["V", "D"] as Gender[]).map((g) => ({ value: g, label: GENDER_LABELS[g] }));
 
-export function DelegationFields({ draft, onChange }: DelegationFieldsProps) {
-  const complete = draft.macro && draft.sportCode && draft.category && draft.gender;
-  const code = complete
-    ? buildDelegationCode({ macro: draft.macro as MacroId, sportCode: draft.sportCode, category: draft.category, gender: draft.gender as Gender })
-    : "Completa los datos deportivos";
-
+export function DelegationFields({ draft, macroOptions, sportOptions, delegationCode, onChange }: DelegationFieldsProps) {
   return (
     <>
       <Field label="Macrorregión" required>
-        <Select value={draft.macro} placeholder="Selecciona" options={options(MACROS)} onChange={(v) => onChange("macro", v)} />
+        <Select value={draft.macroRegionId} placeholder="Selecciona" options={macroOptions} onChange={(v) => onChange("macroRegionId", v)} />
       </Field>
-      <Field label="Región" required>
-        <TextInput value={draft.region} onChange={(e) => onChange("region", e.target.value)} />
+      <Field label="Región" htmlFor="region">
+        <TextInput id="region" value={draft.region} onChange={(e) => onChange("region", e.target.value)} />
       </Field>
       <Field label="Disciplina" required>
-        <Select value={draft.sport} placeholder="Selecciona" options={options(SPORTS.map((s) => s.sport))} onChange={(v) => onChange("sport", v)} />
+        <Select value={draft.sportId} placeholder="Selecciona" options={sportOptions} onChange={(v) => onChange("sportId", v)} />
       </Field>
       <Field label="Categoría" required>
-        <Select value={draft.category} placeholder="Selecciona" options={options(CATEGORIES)} onChange={(v) => onChange("category", v)} />
+        <Select value={draft.category} placeholder="Selecciona" options={CATEGORY_OPTIONS} onChange={(v) => onChange("category", v)} />
       </Field>
-      <Field label="Género" required>
+      <Field label="Rama" required>
         <Select value={draft.gender} placeholder="Selecciona" options={GENDER_OPTIONS} onChange={(v) => onChange("gender", v)} />
       </Field>
-      <Field label="Institución educativa">
-        <TextInput value={draft.school} onChange={(e) => onChange("school", e.target.value)} />
+      <Field label="Institución educativa" htmlFor="school">
+        <TextInput id="school" value={draft.school} onChange={(e) => onChange("school", e.target.value)} />
       </Field>
       <div className="sm:col-span-2 rounded-md bg-neutral-50 px-4 py-3 text-sm">
         <span className="text-neutral-500">Delegación: </span>
-        <span className="font-semibold text-neutral-900">{code}</span>
+        <span className="font-semibold text-neutral-900">{delegationCode ?? "Completa los datos deportivos"}</span>
       </div>
     </>
   );

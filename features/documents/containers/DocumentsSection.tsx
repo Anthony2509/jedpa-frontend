@@ -1,8 +1,9 @@
 "use client";
 
-import { DOCUMENT_TYPE_LABELS, type Participant } from "@/features/participants";
+import { DOCUMENT_TYPE_LABELS, isMockParticipantId, useMacroRegions, type Participant } from "@/features/participants";
 import { useResolution } from "@/features/resolutions";
 import { formatDateTime } from "@/shared/lib/formatDate";
+import { InlineError } from "@/shared/ui/InlineError";
 import { DocumentList } from "../components/DocumentList";
 import { DocumentPreviewModal } from "../components/DocumentPreviewModal";
 import { ObserveDocumentModal } from "../components/ObserveDocumentModal";
@@ -20,8 +21,10 @@ function describeReview({ document, nextAction }: DocumentRowModel) {
 }
 
 export function DocumentsSection({ participant }: DocumentsSectionProps) {
-  const review = useDocumentReview(participant.id);
-  const resolution = useResolution(participant.delegation?.macro);
+  const review = useDocumentReview(participant);
+  const mockResolution = useResolution(participant.delegation?.macro);
+  const macroRegion = useMacroRegions().find((m) => m.id === participant.delegation?.macroRegionId);
+  const resolutionAvailable = isMockParticipantId(participant.id) ? Boolean(mockResolution?.fileName) : Boolean(macroRegion?.hasResolution);
   const rows = buildDocumentRows(participant);
   const previewDocument = participant.documents.find((document) => document.type === review.previewing);
 
@@ -29,8 +32,8 @@ export function DocumentsSection({ participant }: DocumentsSectionProps) {
     describeReview,
     resolution: {
       macro: participant.delegation?.macro,
-      available: Boolean(resolution?.fileName),
-      onConfirm: () => resolution?.fileName && review.confirmResolution(resolution.fileName),
+      available: resolutionAvailable,
+      onConfirm: () => review.confirmResolution(mockResolution?.fileName ?? ""),
     },
     onUpload: review.upload,
     onView: review.openPreview,
@@ -39,7 +42,8 @@ export function DocumentsSection({ participant }: DocumentsSectionProps) {
   };
 
   return (
-    <div>
+    <div aria-busy={review.busy}>
+      <InlineError message={review.error} className="mb-2" />
       <div className="-my-4">
         <DocumentList rows={rows.required} {...listProps} />
       </div>
@@ -58,6 +62,8 @@ export function DocumentsSection({ participant }: DocumentsSectionProps) {
         open={review.previewing !== null}
         documentLabel={review.previewing ? DOCUMENT_TYPE_LABELS[review.previewing] : ""}
         fileName={previewDocument?.fileName}
+        mimeType={previewDocument?.mimeType}
+        url={review.link?.url}
         onClose={review.closePreview}
       />
     </div>

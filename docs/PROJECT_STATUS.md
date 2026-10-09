@@ -2,9 +2,20 @@
 
 > Documento para retomar el trabajo en un chat nuevo. Leer junto con `AGENTS.md`, que contiene las reglas obligatorias de arquitectura y UI.
 > **El backend ya existe**: repo hermano `../jedpa-backend`, rama `develop`. Su estado, sus endpoints y lo que falta están en `jedpa-backend/docs/PROJECT_STATUS.md`. Para conectar pantallas, ver las secciones 7 y 8 de este documento; la estrategia acordada está en **7.5**.
-> Última actualización: 8 de octubre de 2026 (noche, después de conectar las pantallas listas).
+> Última actualización: 9 de octubre de 2026 (tarde). Backend de referencia: `jedpa-backend` rama `develop`, commit `d921a4d` (Sprint 2).
 
-## 0. Últimas sesiones (8 de octubre): resumen
+## 0. Últimas sesiones: resumen
+
+### 9 de octubre (tarde): conexión del Sprint 2
+
+El backend sumó documentos, revisión, credenciales con PDF y QR, verificación pública e importación (ver su `docs/SPEC.md` §14). **Regla acordada: el backend es la fuente de la verdad y el frontend se adapta.** Se conectó todo lo que el backend permite; el detalle está en **7.7**.
+
+- **Conectado:** consulta de participantes; ficha completa (datos y edición, documentos, Resolución Directoral, credencial, duplicados, PDF); alta de integrante; colas de Registro, Revisión y Credenciales; lista de Entregas (sin registrar la entrega); Resoluciones; importación del Excel; Auditoría; página pública del QR; buscador global; contadores del menú y de las 4 tarjetas del dashboard.
+- **La página del QR pasó a `/verificar/[token]`**, la ruta que arma el backend. `/verify` ya no existe.
+- **Sin paso «Emitida» con la API:** imprimir registra el ejemplar con su QR y abre el PDF. Un duplicado revoca el QR anterior.
+- **Siguen con datos de prueba** (con el aviso «Usa datos de prueba»): resto del dashboard, delegaciones y reportes. Sus participantes (ids `p-1`, `p-2`…) siguen funcionando: ver «Convivencia» en 7.7.
+- Probado con Playwright contra el backend real (alta → documentos → RD → revisión → impresión → duplicado → QR válido y revocado → edición → importación → permisos de operador y coordinador). `tsc` y `eslint` limpios; ningún archivo pasa de 120 líneas.
+- **Hallazgos para el backend** (no se tocó): 7.8.
 
 ### Noche (2): conexión de las pantallas listas
 
@@ -182,7 +193,7 @@ Usuarios, lugares de entrega y resoluciones se asumen solo para administrador (l
 | `/reports` | Avance por macro y, para admin, detalle con exportación CSV (columnas del Excel 2024) |
 | `/audit` | Auditoría filtrable, de solo lectura (admin) |
 | `/administration/users`, `/administration/delivery-places` | Configuración (admin) |
-| `/verify/[code]` | Página pública que muestra el QR: estado de la documentación, sin número de documento |
+| `/verificar/[token]` | Página pública que abre el QR (ruta fijada por el backend): estado de la documentación, sin número de documento |
 
 ### Modelo y reglas
 
@@ -280,7 +291,7 @@ Se le envió el PDF `Preguntas_pendientes_JEDPA_2026_ronda2.pdf`, con 15 pregunt
 ### Frontend
 
 - **Hoja de impresión:** PDF de 120 × 155 mm con solo los datos y la foto, una plantilla por tipo, reverso con QR y **ajuste de márgenes configurable**. Hoy solo existe una vista previa.
-- **QR real** (por ejemplo, `qrcode.react`) que apunte a `/verify/<token>`. Hoy es un dibujo de muestra (`credentials/domain/qrPattern.ts`).
+- **QR real en la vista previa de la ficha** (por ejemplo, `qrcode.react`). El QR real ya lo imprime el PDF del backend; la vista previa sigue siendo un dibujo (`credentials/domain/qrPattern.ts`).
 - **Importador del Excel/export** con vista previa, normalización y reporte de errores. Hoy el botón está deshabilitado.
 - **Edición de datos personales:** el botón existe pero no hace nada.
 - Probar el responsive en un teléfono real, en particular la barra inferior y los modales en iOS.
@@ -480,6 +491,49 @@ Cada paso se prueba contra el backend corriendo (en el workspace de la nube o en
 5. Agregar el aviso "Usa datos de prueba: pendiente de conexión con el backend" en las pantallas simuladas.
 6. Borrar la auditoría del lado del cliente (7.1, punto 7) cuando ninguna pantalla conectada dependa de ella.
 
+### 7.7 Qué se conectó el 9 de octubre (Sprint 2 del backend)
+
+| Pantalla | Endpoints | Notas |
+|---|---|---|
+| `/participants` | `GET /participants` | Búsqueda (con pausa de 350 ms), estado, macro y tipo en la URL (`?q=&status=&macro=&type=&page=`). Paginación del servidor, de a 20. Sin columna «Pendiente» (TEMP) |
+| `/participants/[id]` · datos | `GET /participants/:id`, `PATCH /participants/:id` | «Editar datos»: nombres, apellidos, documento, sexo, fecha de nacimiento, región e institución (o servicio en especiales) |
+| `/participants/[id]` · documentos | `GET …/documents`, `POST …/documents/:code`, `PATCH …/:code/review`, `GET …/:code/file`, `POST /macro-regions/:id/resolution/links` | Requisitos según `required` del backend. Ver archivo: imágenes en la ventana; PDF en otra pestaña (el backend no permite mostrarlo en un iframe) |
+| `/participants/[id]` · credencial | `GET/POST …/credentials`, `GET …/credentials/:n/pdf` | «Imprimir credencial» registra el original y abre el PDF. Cada copia vigente tiene «PDF» para reimprimir el mismo ejemplar. «Más acciones → Imprimir duplicado» exige motivo y revoca el QR anterior |
+| `/participants/[id]` · historial | `GET /audit-logs?participantId=` | Solo ADMIN (TEMP: el backend no tiene historial para otros roles). Para COORDINADOR y OPERADOR se oculta |
+| «Pasar a acompañante» | `PATCH /participants/:id` con el tipo `ACOMPANANTE` | |
+| `/registration` | Cola: `?status=PENDING_DOCUMENTS` + `?status=OBSERVED`. Alta: `GET /delegations` (busca la exacta) + `POST /delegations` si falta + `POST /participants` | Si la delegación no existe, ADMIN y COORDINADOR la crean al registrar; el OPERADOR recibe «Esa delegación todavía no existe…» |
+| Importar Excel (en `/registration`) | `POST /participants/import/preview` y `/participants/import` | ADMIN y COORDINADOR. Vista previa con errores por fila; con una sola fila inválida no deja importar |
+| `/review` | `?status=IN_REVIEW` | TEMP: quien tiene algunos documentos subidos y otros faltantes sigue en Registro (ahí también se revisa) |
+| `/credentials` | `?status=READY_TO_PRINT`, `?status=PRINTED` + `DELIVERED`, `POST /credentials/batch`, `POST /credentials/pdf`, `GET /credentials/test-sheet` | Pestañas «Por imprimir» e «Impresas». «Imprimir todas» registra hasta 100 originales y abre un solo PDF. «Hoja de calibración» para ADMIN y COORDINADOR |
+| `/deliveries` | `?status=PRINTED`, `?status=DELIVERED` | Solo listas: el backend aún no tiene entregas. Cada fila abre la ficha |
+| `/resolutions` | `GET /macro-regions`, `POST /macro-regions/:id/resolution`, `GET …/resolution/file` | Sin conteo «por confirmar» (TEMP) |
+| `/audit` | `GET /audit-logs`, `GET /users` (filtro) | Filtros por usuario, acción y fechas. Cada acción del backend se traduce a texto (`audit/domain/apiAuditMapping.ts`) |
+| `/verificar/[token]` | `GET /verify/:token` (público) | Un QR revocado muestra el mensaje del backend sin datos personales |
+| Buscador global | `GET /participants?search=&limit=6` | Desde 2 letras |
+| Contadores del menú y del dashboard | `GET /participants?status=X&limit=1` (lee `meta.total`) | Se actualizan como máximo cada 30 s, para no gastar el límite de peticiones |
+
+**Convivencia con los datos de prueba (TEMP).** `features/participants/domain/dataSource.ts` → `isMockParticipantId(id)`: los ids `p-N` son de los mocks y usan el flujo en memoria; los UUID van a la API. Así siguen funcionando dashboard, delegaciones y reportes mientras no tengan endpoints. Al conectarlos, borrar los mocks y ese archivo; buscar `TEMP(backend)` y `isMockParticipantId`.
+
+**Piezas nuevas:**
+
+- `shared/lib/apiClient.ts`: `apiUpload` (multipart), `apiGetBlob` y `apiPostBlob` (PDF). `shared/lib/openBlob.ts` abre el PDF en otra pestaña (o lo descarga si el navegador bloquea la ventana).
+- `useApiQuery(key, fetcher, { maxAgeMs })`: `maxAgeMs` para datos que cambian en otro lado (contadores).
+- `features/participants/services/`: `apiCodes.ts` (todas las equivalencias de códigos), `participantMapper.ts` y `recordMapper.ts` (API → tipos del frontend), `writeMapper.ts` (formularios → API), `documentsRemote.ts`, `credentialsRemote.ts`, `membersApi.ts`, `queuesApi.ts`, `importApi.ts`, `catalogsApi.ts`.
+- `getParticipantStatus` devuelve el `status` del backend cuando existe; `getRequiredDocuments` usa el `required` del backend.
+- `features/participants/types/` reemplaza a `types.ts` (catálogo, participante y formularios).
+- Permisos nuevos en `auth`: `import_participants`, `manage_delegations` y `calibrate_printer` (ADMIN y COORDINADOR, como en el backend).
+- `shared/ui`: `MockDataNotice`, `TextField`; `InlineError` se desplaza a la vista; `FileUploadButton` entrega el `File` y acepta `accept` y `disabled`.
+
+**Siguiente paso:** cuando el backend sume entregas, resúmenes (por cola, por delegación y por macro) y exportación, conectar Entregas, dashboard, delegaciones y reportes, y borrar los mocks.
+
+### 7.8 Hallazgos sobre el backend (9 de octubre), para su equipo
+
+Detalle y prioridad en `../JEDPA_Backend_Revision_Sprint2.pdf`. Se suman tres, encontrados al conectar:
+
+1. **Bug de auditoría en `documents.service.ts` → `saveDocument`.** `repo.merge(current, next)` modifica `current` antes de calcular los cambios, así que al revisar o reemplazar un documento la auditoría solo guarda `documentType` (igual antes y después): se pierde si se aprobó u observó, la observación y el archivo nuevo. El frontend muestra esas entradas como «Documento revisado». Solución: copiar los valores antes del `merge`.
+2. **El límite de 100 peticiones por minuto por IP lo alcanza un solo usuario rápido.** Cada acción en la ficha recarga la ficha (3 pedidos), la cola y el historial. El frontend ya redujo los contadores, pero el límite por IP sigue siendo el problema (mejora A2 del PDF).
+3. **Los PDF no se pueden mostrar dentro de la app:** helmet envía `frame-ancestors 'self'` también en `/api/files/:token`. Si se quiere vista previa embebida, permitir el origen del frontend en esa ruta.
+
 ## 8. Auditoría del frontend: problemas encontrados (8 de octubre)
 
 Revisión del código completo: 257 archivos. `tsc` y `eslint` limpios. El único error de `tsc` sin `.next` es `LayoutProps` en `app/layout.tsx`, un tipo global que genera Next al compilar, así que no es un problema real.
@@ -494,7 +548,7 @@ Revisión del código completo: 257 archivos. `tsc` y `eslint` limpios. El únic
 
    Las acciones que el rol no puede ejecutar deben ocultarse (ya estaba en la sección 6).
 4. **La auditoría se escribe en el navegador** (`auditContext.ts`). Hay que borrarla al conectar (7.1, punto 7).
-5. **El código de la credencial es secuencial y adivinable** (`JEDPA-2026-0001`, armado con el `id` en `credentialsApi.ts`), y `/verify/[code]` lo usa como llave pública. Con ese esquema se podrían recorrer todas las credenciales. El QR debe llevar el token aleatorio del backend y nunca el código visible.
+5. ~~**El código de la credencial es secuencial y adivinable.**~~ **Resuelto** (9 de octubre): con la API el QR lleva el token aleatorio del backend (`/verificar/<token>`). El código `JEDPA-2026-0001` solo queda en los datos de prueba.
 
 ### 8.2 Arquitectura y datos
 

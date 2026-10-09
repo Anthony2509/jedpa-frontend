@@ -9,7 +9,7 @@ interface DocumentRowProps {
   row: DocumentRowModel;
   reviewMeta?: string;
   resolution: ResolutionActionProps;
-  onUpload: (fileName: string) => void;
+  onUpload: (file: File) => void;
   onView: () => void;
   onApprove: () => void;
   onObserve: () => void;

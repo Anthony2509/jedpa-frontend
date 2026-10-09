@@ -22,3 +22,10 @@ export function formatDate(iso: string): string {
 export function nowIso(): string {
   return new Date().toISOString();
 }
+
+const calendarFormatter = new Intl.DateTimeFormat("es-PE", { timeZone: "UTC", dateStyle: "medium" });
+
+/** A date without time (AAAA-MM-DD, such as a birth date): no time-zone shift. */
+export function formatCalendarDate(ymd: string): string {
+  return calendarFormatter.format(new Date(`${ymd}T00:00:00Z`));
+}

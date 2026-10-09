@@ -2,45 +2,51 @@
 
 import { useState } from "react";
 import {
-  getParticipantStatus,
-  issueCredential,
-  printCredential,
-  useParticipants,
-  type Participant,
+  downloadCopiesPdf, downloadTestSheet, printCredential, registerOriginals, useParticipantsByStatus, useWorkQueueParticipants, type Participant,
 } from "@/features/participants";
+import { getErrorMessage } from "@/shared/lib/apiClient";
+import { openBlob } from "@/shared/lib/openBlob";
+import { PRINT_BATCH_SIZE } from "../domain/credentialsViews";
 import type { CredentialsView } from "../types";
 
-const VIEW_STATUSES: Record<CredentialsView, string[]> = {
-  issue: ["ready_to_print"],
-  print: ["issued"],
-  printed: ["printed", "delivered"],
-};
-
 export function useCredentialsQueue() {
-  const participants = useParticipants();
-  const [view, setView] = useState<CredentialsView>("issue");
+  const [view, setView] = useState<CredentialsView>("print");
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const toPrint = useWorkQueueParticipants("credentials");
+  const printed = useParticipantsByStatus(["printed", "delivered"]);
 
-  const byView = (target: CredentialsView) =>
-    participants
-      .filter((p) => VIEW_STATUSES[target].includes(getParticipantStatus(p)))
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  async function run(action: () => Promise<Blob | null>) {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const pdf = await action();
+      if (pdf) openBlob(pdf);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
 
-  const toIssue = byView("issue");
-  const toPrint = byView("print");
-
-  async function runAll(list: Participant[], action: (id: string) => Promise<void>) {
-    for (const participant of list) await action(participant.id);
+  /** Registers the originals (up to 100) and opens a single PDF with all of them. */
+  async function printBatch(): Promise<Blob | null> {
+    const ids = (toPrint.data?.participants ?? []).slice(0, PRINT_BATCH_SIZE).map((p) => p.id);
+    const result = await registerOriginals(ids);
+    if (result.skipped.length > 0) setNotice(`${result.skipped.length} no se imprimieron: ${result.skipped[0].reason}`);
+    return result.issued.length > 0 ? downloadCopiesPdf(result.issued.map((item) => item.copyId)) : null;
   }
 
   return {
-    view,
-    setView,
-    toIssue,
-    toPrint,
-    printed: byView("printed"),
-    issue: (p: Participant) => issueCredential(p.id),
-    print: (p: Participant) => printCredential(p.id),
-    issueAll: () => runAll(toIssue, issueCredential),
-    printAll: () => runAll(toPrint, printCredential),
+    view, setView, error, notice, busy,
+    toPrint: toPrint.data?.participants,
+    toPrintError: toPrint.error,
+    printed: printed.data?.participants,
+    printedError: printed.error,
+    print: (p: Participant) => run(() => printCredential(p.id)),
+    printAll: () => run(printBatch),
+    testSheet: () => run(downloadTestSheet),
   };
 }

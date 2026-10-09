@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MACROS, useParticipants } from "@/features/participants";
 import { FilterBar } from "@/shared/ui/FilterBar";
+import { MockDataNotice } from "@/shared/ui/MockDataNotice";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { Select } from "@/shared/ui/Select";
@@ -25,6 +26,7 @@ export function DelegationsListContainer() {
         title="Delegaciones"
         description="Cada delegación representa a una macrorregión en una disciplina, categoría y género. Desde aquí se imprime y entrega por grupo."
       />
+      <MockDataNotice />
       <FilterBar>
         <SearchInput value={search} placeholder="Buscar por código, región o disciplina" onChange={setSearch} />
         <Select value={macro} placeholder="Todas las macros" options={MACRO_OPTIONS} onChange={setMacro} />

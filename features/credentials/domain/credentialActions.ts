@@ -6,6 +6,7 @@ import {
   describeDiscipline,
   getFullName,
   getParticipantStatus,
+  isMockParticipantId,
   isSpecialType,
   type Participant,
 } from "@/features/participants";
@@ -20,7 +21,19 @@ export interface CredentialAvailability {
 
 export function getCredentialAvailability(participant: Participant): CredentialAvailability {
   const status = getParticipantStatus(participant);
-  return { canIssue: status === "ready_to_print", canPrint: status === "issued", canDuplicate: canPrintDuplicate(participant) };
+  const canDuplicate = canPrintDuplicate(participant);
+  // The API prints and issues in one step: there is no "issued" status.
+  if (!isMockParticipantId(participant.id)) return { canIssue: false, canPrint: status === "ready_to_print" && !participant.credential, canDuplicate };
+  return { canIssue: status === "ready_to_print", canPrint: status === "issued", canDuplicate };
+}
+
+/** Relative link to the public page the QR opens (/verificar/<token>). */
+export function getVerificationHref(participant: Participant): string | null {
+  const credential = participant.credential;
+  if (!credential) return null;
+  const current = credential.copies.find((copy) => !copy.revoked && copy.verificationUrl);
+  if (current?.verificationUrl) return new URL(current.verificationUrl).pathname;
+  return `/verificar/${credential.code}`;
 }
 
 /** Fields printed on each card type, as in the client's 2024 cards. */
@@ -39,7 +52,8 @@ function buildFields(participant: Participant): CredentialField[] {
 }
 
 export function buildCredentialCardData(participant: Participant): CredentialCardData {
-  const code = participant.credential?.code ?? "JEDPA-2026-XXXX";
+  const placeholder = isMockParticipantId(participant.id) ? "JEDPA-2026-XXXX" : "Se crea al imprimir";
+  const code = participant.credential?.code ?? placeholder;
   return {
     typeLabel: PARTICIPANT_TYPE_LABELS[participant.type],
     fullName: getFullName(participant).toUpperCase(),

@@ -4,7 +4,7 @@ import { DocumentRow } from "./DocumentRow";
 import type { ResolutionActionProps } from "./ResolutionAction";
 
 export interface DocumentListHandlers {
-  onUpload: (type: DocumentType, fileName: string) => void;
+  onUpload: (type: DocumentType, file: File) => void;
   onView: (type: DocumentType) => void;
   onApprove: (type: DocumentType) => void;
   onObserve: (type: DocumentType) => void;
@@ -27,7 +27,7 @@ export function DocumentList({ rows, resolution, describeReview, ...handlers }: 
             row={row}
             reviewMeta={describeReview(row)}
             resolution={resolution}
-            onUpload={(fileName) => handlers.onUpload(type, fileName)}
+            onUpload={(file) => handlers.onUpload(type, file)}
             onView={() => handlers.onView(type)}
             onApprove={() => handlers.onApprove(type)}
             onObserve={() => handlers.onObserve(type)}

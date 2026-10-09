@@ -7,7 +7,18 @@ export type AuditAction =
   | "credential_issued"
   | "credential_printed"
   | "credential_reprinted"
-  | "credential_delivered";
+  | "credential_delivered"
+  // Only from the API:
+  | "document_reviewed"
+  | "document_review_undone"
+  | "pdf_downloaded"
+  | "status_changed"
+  | "file_accessed"
+  | "imported"
+  | "activated"
+  | "deactivated"
+  | "record_created"
+  | "record_updated";
 
 export interface AuditEntry {
   id: string;
@@ -16,6 +27,8 @@ export interface AuditEntry {
   action: AuditAction;
   participantId: string;
   participantName: string;
+  /** API: what was touched when it is not a participant (User, DeliveryPlace…). */
+  entity?: string;
   field?: string;
   before?: string;
   after?: string;
@@ -24,8 +37,10 @@ export interface AuditEntry {
 
 export type NewAuditEntry = Omit<AuditEntry, "id">;
 
-export interface AuditFilters {
-  search: string;
-  userName: string;
+/** API filters: they go to GET /audit-logs as is. Dates are AAAA-MM-DD (Peru time). */
+export interface AuditApiFilters {
+  userId: string;
   action: string;
+  from: string;
+  to: string;
 }

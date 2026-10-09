@@ -17,7 +17,7 @@ interface AppFrameProps {
 export function AppFrame({ sidebar, topbar, bottomNav, navOpen, onCloseNav, children }: AppFrameProps) {
   return (
     <div className="flex h-dvh bg-neutral-50">
-      <div className="hidden w-60 shrink-0 lg:flex">{sidebar}</div>
+      <div className="hidden w-64 shrink-0 lg:flex">{sidebar}</div>
       {navOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={onCloseNav} aria-hidden />

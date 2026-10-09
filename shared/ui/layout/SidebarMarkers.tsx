@@ -23,5 +23,5 @@ interface CountBadgeProps {
 }
 
 export function CountBadge({ count }: CountBadgeProps) {
-  return <span className="min-w-6 text-right text-xs font-medium tabular-nums text-neutral-500">{count}</span>;
+  return <span className="min-w-4 text-right text-xs font-medium tabular-nums text-neutral-500">{count}</span>;
 }

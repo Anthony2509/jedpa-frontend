@@ -1,60 +1,70 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { usePermission } from "@/features/auth";
 import { WORK_QUEUES, WorkQueueView } from "@/features/participants";
-import { formatDateTime } from "@/shared/lib/formatDate";
 import { Button } from "@/shared/ui/Button";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { InlineError } from "@/shared/ui/InlineError";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { Tabs } from "@/shared/ui/Tabs";
 import { PrintedCredentialsTable } from "../components/PrintedCredentialsTable";
-import { CREDENTIALS_VIEW_META, getCredentialPending } from "../domain/credentialsViews";
+import { PRINT_BATCH_SIZE, PRINT_VIEW_META } from "../domain/credentialsViews";
 import { useCredentialsQueue } from "../hooks/useCredentialsQueue";
 import type { CredentialsView } from "../types";
 
 export function CredentialsQueueContainer() {
   const router = useRouter();
   const queue = useCredentialsQueue();
+  const canCalibrate = usePermission("calibrate_printer");
   const openRecord = (id: string) => router.push(`/participants/${id}?from=credentials`);
-  const active = queue.view === "printed" ? null : CREDENTIALS_VIEW_META[queue.view];
-  const rows = queue.view === "issue" ? queue.toIssue : queue.toPrint;
+  const pending = queue.toPrint?.length ?? 0;
 
   return (
     <>
       <PageHeader
         eyebrow={`Paso ${WORK_QUEUES.credentials.step} de 4`}
-        title="Credenciales"
-        description="Primero se genera la credencial (código único y QR) y después se imprime. Imprimir no la marca como entregada."
+        title={WORK_QUEUES.credentials.label}
+        description="Imprimir registra el ejemplar con su QR y abre el PDF para la impresora. Imprimir no la marca como entregada."
         actions={
-          active && (
-            <Button variant="secondary" disabled={rows.length === 0} onClick={queue.view === "issue" ? queue.issueAll : queue.printAll}>
-              {active.bulkLabel} ({rows.length})
-            </Button>
-          )
+          <>
+            {canCalibrate && <Button variant="ghost" disabled={queue.busy} onClick={queue.testSheet}>Hoja de calibración</Button>}
+            {queue.view === "print" && (
+              <Button variant="secondary" disabled={pending === 0 || queue.busy} onClick={queue.printAll}>
+                {PRINT_VIEW_META.bulkLabel} ({Math.min(pending, PRINT_BATCH_SIZE)})
+              </Button>
+            )}
+          </>
         }
       />
+      <InlineError message={queue.error} className="mb-4" />
+      {queue.notice && <p className="mb-4 text-sm text-neutral-600">{queue.notice}</p>}
       <Tabs
         activeId={queue.view}
         onChange={(id) => queue.setView(id as CredentialsView)}
         tabs={[
-          { id: "issue", label: "1. Por generar", count: queue.toIssue.length },
-          { id: "print", label: "2. Por imprimir", count: queue.toPrint.length },
-          { id: "printed", label: "Impresas", count: queue.printed.length },
+          { id: "print", label: "Por imprimir", count: pending },
+          { id: "printed", label: "Impresas", count: queue.printed?.length ?? 0 },
         ]}
       />
-      {active ? (
-        <WorkQueueView
-          participants={rows}
-          pendingHeader={active.pendingHeader}
-          getPending={queue.view === "issue" ? undefined : (p) => getCredentialPending(queue.view, p)}
-          nextCtaLabel={active.nextCtaLabel}
-          rowActionLabel={active.actionLabel}
-          doneTitle={active.doneTitle}
-          doneMessage={active.doneMessage}
-          onAction={queue.view === "issue" ? queue.issue : queue.print}
-          onOpen={(p) => openRecord(p.id)}
-        />
+      {queue.view === "print" ? (
+        queue.toPrint ? (
+          <WorkQueueView
+            participants={queue.toPrint}
+            nextCtaLabel={PRINT_VIEW_META.nextCtaLabel}
+            rowActionLabel={PRINT_VIEW_META.actionLabel}
+            doneTitle={PRINT_VIEW_META.doneTitle}
+            doneMessage={PRINT_VIEW_META.doneMessage}
+            onAction={queue.print}
+            onOpen={(p) => openRecord(p.id)}
+          />
+        ) : (
+          <EmptyState message={queue.toPrintError ?? "Cargando credenciales por imprimir…"} />
+        )
+      ) : queue.printed ? (
+        <PrintedCredentialsTable participants={queue.printed} onOpen={(p) => openRecord(p.id)} />
       ) : (
-        <PrintedCredentialsTable participants={queue.printed} formatDate={formatDateTime} onOpen={(p) => openRecord(p.id)} />
+        <EmptyState message={queue.printedError ?? "Cargando credenciales impresas…"} />
       )}
     </>
   );

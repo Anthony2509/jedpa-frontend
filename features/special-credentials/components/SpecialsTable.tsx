@@ -13,6 +13,7 @@ import { getAccessLabel } from "../domain/accessLabel";
 
 interface SpecialsTableProps {
   participants: Participant[];
+  onOpen: (participant: Participant) => void;
 }
 
 const statusOf = (p: Participant) => p.status ?? getParticipantStatus(p);
@@ -47,16 +48,13 @@ const COLUMNS: Column<Participant>[] = [
   { key: "status", header: "Estado", className: "w-[14%]", mobile: "hidden", render: (p) => <ParticipantStatusBadge status={statusOf(p)} /> },
 ];
 
-/**
- * TEMP(backend): rows don't open the record yet. The record (/participants/[id]) still reads
- * mock data and would not find API participants; connect it in the next step.
- */
-export function SpecialsTable({ participants }: SpecialsTableProps) {
+export function SpecialsTable({ participants, onOpen }: SpecialsTableProps) {
   return (
     <DataTable
       columns={COLUMNS}
       rows={participants}
       getRowKey={(p) => p.id}
+      onRowClick={onOpen}
       emptyMessage="Todavía no hay credenciales especiales. Crea la primera con el botón de arriba."
     />
   );
