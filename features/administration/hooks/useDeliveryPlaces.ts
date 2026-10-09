@@ -1,8 +1,16 @@
 "use client";
 
-import { useStore } from "@/shared/lib/useStore";
-import { deliveryPlacesStore } from "../services/deliveryPlacesApi";
+import { useApiQuery } from "@/shared/lib/useApiQuery";
+import { DELIVERY_PLACES_QUERY, fetchDeliveryPlaces } from "../services/deliveryPlacesApi";
+import type { DeliveryPlace } from "../types";
 
-export function useDeliveryPlaces() {
-  return useStore(deliveryPlacesStore);
+const NO_PLACES: DeliveryPlace[] = [];
+
+export function useDeliveryPlacesQuery() {
+  return useApiQuery(DELIVERY_PLACES_QUERY, fetchDeliveryPlaces);
+}
+
+/** All places (active and inactive); empty while loading. */
+export function useDeliveryPlaces(): DeliveryPlace[] {
+  return useDeliveryPlacesQuery().data ?? NO_PLACES;
 }

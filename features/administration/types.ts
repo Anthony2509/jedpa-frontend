@@ -1,4 +1,4 @@
-import type { User } from "@/features/auth";
+import type { Role } from "@/features/auth";
 
 export interface DeliveryPlace {
   id: string;
@@ -6,4 +6,16 @@ export interface DeliveryPlace {
   active: boolean;
 }
 
-export type UserDraft = Omit<User, "id">;
+/** Role option for the user form; `id` is the API's role UUID. */
+export interface RoleOption {
+  id: string;
+  role: Role;
+}
+
+export interface UserDraft {
+  name: string;
+  email: string;
+  role: Role;
+  /** Required to create; on edit, empty keeps the current password. */
+  password: string;
+}

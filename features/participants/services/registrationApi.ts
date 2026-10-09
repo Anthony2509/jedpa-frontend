@@ -1,6 +1,6 @@
 import { DOCUMENT_TYPES, OPTIONAL_DOCUMENTS, REQUIRED_DOCUMENTS } from "../domain/documentTypes";
 import { DEFAULT_ACCESS, PARTICIPANT_TYPE_LABELS } from "../domain/participantTypes";
-import type { Gender, MacroId, Participant, ParticipantDocument, ParticipantDraft, ParticipantType, SpecialDraft } from "../types";
+import type { Gender, MacroId, Participant, ParticipantDocument, ParticipantDraft, ParticipantType } from "../types";
 import { auditParticipantChange, currentActor } from "./auditContext";
 import { participantsStore, updateParticipant } from "./participantsStore";
 
@@ -43,11 +43,6 @@ export async function createParticipant(draft: ParticipantDraft): Promise<Partic
       gender: gender as Gender,
     },
   });
-}
-
-/** Special credentials (MINEDU, guests, suppliers): no documents, ready to generate right away. */
-export async function createSpecialParticipant(draft: SpecialDraft): Promise<Participant> {
-  return addParticipant(draft);
 }
 
 /** ASSUMPTION (pending confirmation): an athlete missing mandatory documents becomes a companion. */

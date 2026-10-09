@@ -6,6 +6,7 @@ import { RowSummary } from "@/shared/ui/RowSummary";
 
 interface UsersTableProps {
   users: User[];
+  disabled?: boolean;
   onEdit: (user: User) => void;
   onToggleActive: (user: User) => void;
 }
@@ -22,11 +23,11 @@ function Identity({ user }: { user: User }) {
 // Active is the normal state, so it stays quiet; an inactive account is the exception worth seeing.
 const StatusBadge = ({ user }: { user: User }) => <Badge tone={user.active ? "muted" : "outline"}>{user.active ? "Activo" : "Inactivo"}</Badge>;
 
-export function UsersTable({ users, onEdit, onToggleActive }: UsersTableProps) {
+export function UsersTable({ users, disabled, onEdit, onToggleActive }: UsersTableProps) {
   const actions = (u: User) => (
     <div className="flex gap-2 md:justify-end">
       <Button size="sm" variant="ghost" onClick={() => onEdit(u)}>Editar</Button>
-      <Button size="sm" variant="secondary" onClick={() => onToggleActive(u)}>{u.active ? "Desactivar" : "Activar"}</Button>
+      <Button size="sm" variant="secondary" disabled={disabled} onClick={() => onToggleActive(u)}>{u.active ? "Desactivar" : "Activar"}</Button>
     </div>
   );
   const columns: Column<User>[] = [

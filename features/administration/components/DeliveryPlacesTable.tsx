@@ -5,10 +5,11 @@ import type { DeliveryPlace } from "../types";
 
 interface DeliveryPlacesTableProps {
   places: DeliveryPlace[];
+  disabled?: boolean;
   onToggleActive: (place: DeliveryPlace) => void;
 }
 
-export function DeliveryPlacesTable({ places, onToggleActive }: DeliveryPlacesTableProps) {
+export function DeliveryPlacesTable({ places, disabled, onToggleActive }: DeliveryPlacesTableProps) {
   const columns: Column<DeliveryPlace>[] = [
     {
       key: "name",
@@ -26,7 +27,7 @@ export function DeliveryPlacesTable({ places, onToggleActive }: DeliveryPlacesTa
       header: "",
       className: "w-px text-right",
       render: (p) => (
-        <Button size="sm" variant="secondary" onClick={() => onToggleActive(p)}>
+        <Button size="sm" variant="secondary" disabled={disabled} onClick={() => onToggleActive(p)}>
           {p.active ? "Desactivar" : "Activar"}
         </Button>
       ),
