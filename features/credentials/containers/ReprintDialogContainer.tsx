@@ -1,6 +1,6 @@
 "use client";
 
-import { MAX_COPIES, getNextCopyLabel, type Participant } from "@/features/participants";
+import { MAX_COPIES, getNextCopyLabel, isMockParticipantId, type Participant } from "@/features/participants";
 import { ReprintModal } from "../components/ReprintModal";
 import { useReprint } from "../hooks/useReprint";
 
@@ -11,7 +11,7 @@ interface ReprintDialogContainerProps {
 }
 
 export function ReprintDialogContainer({ participant, open, onClose }: ReprintDialogContainerProps) {
-  const reprint = useReprint(participant.id, onClose);
+  const reprint = useReprint(participant, onClose);
   const printed = participant.credential?.copies.length ?? 0;
   return (
     <ReprintModal
@@ -19,6 +19,9 @@ export function ReprintDialogContainer({ participant, open, onClose }: ReprintDi
       copyLabel={getNextCopyLabel(participant)}
       remaining={Math.max(0, MAX_COPIES - printed - 1)}
       reason={reprint.reason}
+      revokesPreviousQr={!isMockParticipantId(participant.id)}
+      error={reprint.error}
+      busy={reprint.busy}
       onReasonChange={reprint.setReason}
       onConfirm={reprint.confirm}
       onClose={onClose}

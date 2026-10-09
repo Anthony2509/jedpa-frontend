@@ -5,6 +5,7 @@ import {
   getParticipantContext,
   getParticipantStatus,
   getRequiredDocuments,
+  isMockParticipantId,
   isSpecialType,
   type Participant,
 } from "@/features/participants";
@@ -29,10 +30,13 @@ function credentialStep(participant: Participant, documentsDone: boolean): StepD
   if (!documentsDone) {
     return { ...base, state: "locked", summary: "", lockedReason: "Se habilita cuando se aprueben todos los documentos obligatorios." };
   }
-  if (!credential) return { ...base, state: "current", summary: "Lista para generar" };
+  const mock = isMockParticipantId(participant.id);
+  if (!credential) return { ...base, state: "current", summary: mock ? "Lista para generar" : "Lista para imprimir" };
   if (credential.copies.length === 0) return { ...base, state: "current", summary: `${credential.code} · falta imprimir` };
   const duplicates = credential.copies.length - 1;
-  return { ...base, state: "done", summary: `${credential.code} · original${duplicates ? ` + ${duplicates} duplicado(s)` : ""} impreso` };
+  // API codes are the QR token: long and meaningless to people, so only the copies are listed.
+  const prefix = mock ? `${credential.code} · ` : "";
+  return { ...base, state: "done", summary: `${prefix}Original${duplicates ? ` + ${duplicates} duplicado(s)` : ""} impreso` };
 }
 
 function deliveryStep(participant: Participant, formatDate: FormatDate): StepDraft {

@@ -9,7 +9,12 @@ export type Permission =
   | "reports_full"
   | "audit"
   | "resolutions"
-  | "administration";
+  | "administration"
+  /** Excel import and creating delegations: the API allows only ADMIN and COORDINADOR. */
+  | "import_participants"
+  | "manage_delegations"
+  /** Printer calibration sheet (ADMIN and COORDINADOR in the API). */
+  | "calibrate_printer";
 
 export interface User {
   id: string;

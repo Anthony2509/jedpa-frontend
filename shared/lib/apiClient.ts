@@ -62,9 +62,13 @@ async function readErrorMessage(response: Response): Promise<string> {
   return FALLBACK_MESSAGE;
 }
 
-async function request<T>(method: string, path: string, body?: unknown, params?: QueryParams): Promise<T> {
+type RequestBody = unknown | FormData;
+type ResponseKind = "json" | "blob";
+
+async function send(method: string, path: string, body?: RequestBody, params?: QueryParams): Promise<Response> {
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const isForm = typeof FormData !== "undefined" && body instanceof FormData;
+  if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
   let response: Response;
@@ -72,7 +76,7 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
     response = await fetch(buildUrl(path, params), {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
     });
   } catch {
     throw new ApiError(0, NETWORK_MESSAGE);
@@ -80,6 +84,12 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
 
   if (response.status === 401 && authToken) unauthorizedHandler?.();
   if (!response.ok) throw new ApiError(response.status, await readErrorMessage(response));
+  return response;
+}
+
+async function request<T>(method: string, path: string, body?: RequestBody, params?: QueryParams, kind: ResponseKind = "json"): Promise<T> {
+  const response = await send(method, path, body, params);
+  if (kind === "blob") return (await response.blob()) as T;
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
@@ -87,6 +97,11 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
 export const apiGet = <T>(path: string, params?: QueryParams) => request<T>("GET", path, undefined, params);
 export const apiPost = <T>(path: string, body: unknown) => request<T>("POST", path, body);
 export const apiPatch = <T>(path: string, body: unknown) => request<T>("PATCH", path, body);
+/** Multipart upload: `form` carries the file (the browser sets the boundary header). */
+export const apiUpload = <T>(path: string, form: FormData) => request<T>("POST", path, form);
+/** Binary responses (PDF): GET, or POST when the body lists what to include. */
+export const apiGetBlob = (path: string) => request<Blob>("GET", path, undefined, undefined, "blob");
+export const apiPostBlob = (path: string, body: unknown) => request<Blob>("POST", path, body, undefined, "blob");
 
 export function getErrorMessage(error: unknown, fallback = FALLBACK_MESSAGE): string {
   return error instanceof Error && error.message ? error.message : fallback;

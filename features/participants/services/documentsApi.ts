@@ -1,6 +1,8 @@
 import { DOCUMENT_STATUS_META, DOCUMENT_TYPE_LABELS } from "../domain/documentTypes";
+import { isMockParticipantId } from "../domain/dataSource";
 import type { DocumentType, Participant, ParticipantDocument } from "../types";
 import { auditParticipantChange, currentActor } from "./auditContext";
+import { linkResolution, reviewDocument, uploadDocumentFile } from "./documentsRemote";
 import { updateParticipant } from "./participantsStore";
 
 function patchDocument(participant: Participant, type: DocumentType, patch: Partial<ParticipantDocument>): Participant {
@@ -15,7 +17,11 @@ function getStatusLabel(participant: Participant, type: DocumentType): string {
   return document ? DOCUMENT_STATUS_META[document.status].label : "";
 }
 
-export async function uploadDocument(participantId: string, type: DocumentType, fileName: string): Promise<void> {
+// Real participants go to the API; the mock ones (TEMP, see dataSource.ts) keep the in-memory flow.
+
+export async function uploadDocument(participantId: string, type: DocumentType, file: File): Promise<void> {
+  if (!isMockParticipantId(participantId)) return uploadDocumentFile(participantId, type, file);
+  const fileName = file.name;
   const updated = updateParticipant(participantId, (participant) =>
     patchDocument(participant, type, { fileName, status: "pending", observation: undefined }),
   );
@@ -23,6 +29,7 @@ export async function uploadDocument(participantId: string, type: DocumentType, 
 }
 
 export async function approveDocument(participantId: string, type: DocumentType): Promise<void> {
+  if (!isMockParticipantId(participantId)) return reviewDocument(participantId, type, "approved");
   let before = "";
   const { at, by } = currentActor();
   const updated = updateParticipant(participantId, (participant) => {
@@ -33,6 +40,7 @@ export async function approveDocument(participantId: string, type: DocumentType)
 }
 
 export async function observeDocument(participantId: string, type: DocumentType, observation: string): Promise<void> {
+  if (!isMockParticipantId(participantId)) return reviewDocument(participantId, type, "observed", observation);
   let before = "";
   const { at, by } = currentActor();
   const updated = updateParticipant(participantId, (participant) => {
@@ -52,9 +60,13 @@ export async function observeDocument(participantId: string, type: DocumentType,
  * The directoral resolution is one PDF per macro-region. "Uploading it" to a profile means
  * confirming that the person appears in it, so the document is linked and approved in one step.
  */
-export async function confirmInResolution(participantId: string, resolutionFileName: string): Promise<void> {
+export async function confirmInResolution(participant: Participant, resolutionFileName: string): Promise<void> {
+  if (!isMockParticipantId(participant.id)) {
+    if (!participant.delegation?.macroRegionId) throw new Error("El participante no tiene macrorregión.");
+    return linkResolution(participant.delegation.macroRegionId, [participant.id]);
+  }
   const { at, by } = currentActor();
-  const updated = updateParticipant(participantId, (participant) =>
+  const updated = updateParticipant(participant.id, (participant) =>
     patchDocument(participant, "directoral_resolution", {
       fileName: resolutionFileName,
       status: "approved",

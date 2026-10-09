@@ -8,7 +8,7 @@ interface DocumentRowActionsProps {
   hasFile: boolean;
   required: boolean;
   resolution: ResolutionActionProps;
-  onUpload: (fileName: string) => void;
+  onUpload: (file: File) => void;
   onApprove: () => void;
   onObserve: () => void;
 }

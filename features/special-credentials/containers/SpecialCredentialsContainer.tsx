@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/Button";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { PageHeader } from "@/shared/ui/PageHeader";
@@ -11,6 +12,7 @@ import { useSpecialCredentials } from "../hooks/useSpecialCredentials";
 import { useSpecialForm } from "../hooks/useSpecialForm";
 
 export function SpecialCredentialsContainer() {
+  const router = useRouter();
   const specials = useSpecialCredentials();
   const form = useSpecialForm(specials.specialTypes);
   const shown = specials.participants?.length ?? 0;
@@ -28,7 +30,7 @@ export function SpecialCredentialsContainer() {
       />
       {specials.participants ? (
         <>
-          <SpecialsTable participants={specials.participants} />
+          <SpecialsTable participants={specials.participants} onOpen={(p) => router.push(`/participants/${p.id}`)} />
           {specials.total > shown && (
             <p className="mt-4 text-sm text-neutral-500">Se muestran {shown} de {specials.total} credenciales especiales.</p>
           )}

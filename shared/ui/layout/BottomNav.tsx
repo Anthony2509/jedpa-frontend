@@ -39,7 +39,7 @@ export function BottomNav({ items }: BottomNavProps) {
               </span>
             ) : null}
           </span>
-          <span className="max-w-full truncate">{item.label}</span>
+          <span className="max-w-full truncate">{item.shortLabel ?? item.label}</span>
         </Link>
       ))}
     </nav>

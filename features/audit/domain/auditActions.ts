@@ -10,6 +10,16 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   credential_printed: "Credencial impresa",
   credential_reprinted: "Credencial reimpresa",
   credential_delivered: "Credencial entregada",
+  document_reviewed: "Documento revisado",
+  document_review_undone: "Revisión deshecha",
+  pdf_downloaded: "PDF de credencial descargado",
+  status_changed: "Cambio de estado",
+  file_accessed: "Acceso a un archivo",
+  imported: "Importación",
+  activated: "Activación",
+  deactivated: "Desactivación",
+  record_created: "Alta",
+  record_updated: "Edición",
 };
 
 export const AUDIT_ACTIONS = Object.keys(AUDIT_ACTION_LABELS) as AuditAction[];

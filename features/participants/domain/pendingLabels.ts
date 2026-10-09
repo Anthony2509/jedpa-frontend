@@ -21,6 +21,8 @@ export function getReviewPending(participant: Participant): PendingSummary {
 
 /** For consultation lists: whatever is holding the participant back right now, if anything. */
 export function getCurrentPending(participant: Participant): PendingSummary | null {
+  // API list rows come without documents (TEMP(backend): no pending summary in the list yet).
+  if (participant.documents.length === 0) return null;
   const status = getParticipantStatus(participant);
   if (status === "pending_documents" || status === "observed") return getRegistrationPending(participant);
   if (status === "in_review") return { ...getReviewPending(participant), lead: "Por revisar" };

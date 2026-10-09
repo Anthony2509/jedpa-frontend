@@ -1,4 +1,4 @@
-import type { AccessLevel, IdentityType, ParticipantType } from "../types";
+import type { AccessLevel, IdentityType, ParticipantType, PersonGender } from "../types";
 
 export const PARTICIPANT_TYPE_LABELS: Record<ParticipantType, string> = {
   athlete: "Deportista",
@@ -40,3 +40,5 @@ export const ACCESS_LABELS: Record<AccessLevel, string> = { total: "Acceso total
 export const IDENTITY_TYPE_LABELS: Record<IdentityType, string> = { dni: "DNI", ce: "CE", passport: "Pasaporte" };
 
 export const IDENTITY_TYPES = Object.keys(IDENTITY_TYPE_LABELS) as IdentityType[];
+
+export const PERSON_GENDER_LABELS: Record<PersonGender, string> = { female: "Femenino", male: "Masculino" };

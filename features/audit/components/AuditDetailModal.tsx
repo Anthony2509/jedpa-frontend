@@ -15,7 +15,7 @@ export function AuditDetailModal({ entry, formatDate, onClose }: AuditDetailModa
     <Modal open title={AUDIT_ACTION_LABELS[entry.action]} description="Registro de solo lectura" onClose={onClose}>
       <DefinitionList
         items={[
-          { label: "Participante", value: `${entry.participantName} (${entry.participantId})` },
+          { label: entry.participantId ? "Participante" : "Registro", value: entry.participantName },
           { label: "Usuario responsable", value: entry.userName },
           { label: "Fecha y hora", value: formatDate(entry.at) },
           { label: "Campo afectado", value: entry.field },

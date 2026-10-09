@@ -19,6 +19,11 @@ export interface VerificationView {
   statusTone: BadgeTone;
   documentsComplete: boolean;
   documents: Array<{ label: string; statusLabel: string; ok: boolean }>;
+  /** API only: the backend's own sentence ("Credencial válida…" / "Credencial NO válida…"). */
+  message?: string;
+  copyLabel?: string;
+  /** false for a copy replaced by a duplicate: no personal data is shown. */
+  valid?: boolean;
 }
 
 /**

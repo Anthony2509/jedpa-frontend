@@ -1,11 +1,11 @@
-import { PARTICIPANT_TYPE_LABELS, SPECIAL_TYPES, type SpecialDraft } from "@/features/participants";
+import { IdentityFields, PARTICIPANT_TYPE_LABELS, SPECIAL_TYPES, type SpecialDraft } from "@/features/participants";
 import { Button } from "@/shared/ui/Button";
 import { Field } from "@/shared/ui/Field";
 import { InlineError } from "@/shared/ui/InlineError";
 import { Modal } from "@/shared/ui/Modal";
 import { Select } from "@/shared/ui/Select";
 import { TextInput } from "@/shared/ui/TextInput";
-import { SpecialIdentityFields } from "./SpecialIdentityFields";
+
 
 interface SpecialFormModalProps {
   open: boolean;
@@ -41,7 +41,7 @@ export function SpecialFormModal({ open, draft, accessLabel, error, submitting, 
         <Field label="Acceso" hint="Lo define el tipo de credencial.">
           <p className="flex h-10 items-center text-sm text-neutral-900">{accessLabel}</p>
         </Field>
-        <SpecialIdentityFields values={draft} onChange={onFieldChange} />
+        <IdentityFields values={draft} onChange={onFieldChange} />
         <div className="sm:col-span-2">
           <Field label="Servicio / Institución" htmlFor="special-institution" required>
             <TextInput id="special-institution" value={draft.institution} onChange={(e) => onFieldChange("institution", e.target.value)} />

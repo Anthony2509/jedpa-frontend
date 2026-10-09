@@ -1,72 +1,47 @@
-import { Badge } from "@/shared/ui/Badge";
+import type { MacroRegionOption } from "@/features/participants";
+import { Button } from "@/shared/ui/Button";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { FileUploadButton } from "@/shared/ui/FileUploadButton";
 import { RowSummary } from "@/shared/ui/RowSummary";
-import type { Resolution } from "../types";
-
-export interface ResolutionRow extends Resolution {
-  pendingConfirmations: number;
-}
+import { ResolutionStatusBadge } from "./ResolutionStatusBadge";
 
 interface ResolutionsTableProps {
-  rows: ResolutionRow[];
-  formatDate: (iso: string) => string;
-  onUpload: (row: ResolutionRow, fileName: string) => void;
+  rows: MacroRegionOption[];
+  busyId: string | null;
+  onUpload: (row: MacroRegionOption, file: File) => void;
+  onView: (row: MacroRegionOption) => void;
 }
 
-function Pending({ count }: { count: number }) {
-  if (!count) return <span className="text-xs text-neutral-400">Nadie por confirmar</span>;
-  return (
-    <span className="tabular-nums">
-      <span className="text-sm font-semibold text-brand">{count}</span>
-      <span className="text-xs text-neutral-600"> por confirmar</span>
-    </span>
-  );
-}
-
-function ResolutionFile({ row, formatDate }: { row: ResolutionRow; formatDate: (iso: string) => string }) {
-  if (!row.fileName) return <Badge tone="brand">Falta cargar</Badge>;
-  return (
-    <div className="leading-snug">
-      <p className="text-neutral-900">{row.fileName}</p>
-      <p className="text-xs text-neutral-500">{row.uploadedBy} · {row.uploadedAt ? formatDate(row.uploadedAt) : ""}</p>
+/** TEMP(backend): no "participants to confirm" count per macro until the API has a summary endpoint. */
+export function ResolutionsTable({ rows, busyId, onUpload, onView }: ResolutionsTableProps) {
+  const actions = (r: MacroRegionOption) => (
+    <div className="flex gap-2 md:justify-end">
+      {r.hasResolution && <Button size="sm" variant="ghost" disabled={busyId === r.id} onClick={() => onView(r)}>Ver PDF</Button>}
+      <FileUploadButton
+        label={r.hasResolution ? "Reemplazar" : "Cargar resolución"}
+        emphasis={r.hasResolution ? "quiet" : "primary"}
+        accept=".pdf"
+        disabled={busyId === r.id}
+        onSelect={(file) => onUpload(r, file)}
+      />
     </div>
   );
-}
-
-export function ResolutionsTable({ rows, formatDate, onUpload }: ResolutionsTableProps) {
-  const columns: Column<ResolutionRow>[] = [
+  const columns: Column<MacroRegionOption>[] = [
     {
       key: "card",
       header: "",
       className: "hidden",
       mobile: "title",
       render: (r) => (
-        <RowSummary
-          title={`Macro ${r.macro.slice(1)}`}
-          subtitle={r.fileName}
-          note={r.uploadedAt ? `${r.uploadedBy} · ${formatDate(r.uploadedAt)}` : undefined}
-        >
-          {!r.fileName && <Badge tone="brand">Falta cargar</Badge>}
-          <Pending count={r.pendingConfirmations} />
+        <RowSummary title={r.name} subtitle={r.code}>
+          <ResolutionStatusBadge uploaded={r.hasResolution} />
+          <div className="-ml-3">{actions(r)}</div>
         </RowSummary>
       ),
     },
-    { key: "macro", header: "Macro", className: "w-[10%]", mobile: "hidden", render: (r) => <span className="font-semibold text-neutral-950">{r.macro}</span> },
-    { key: "file", header: "Resolución", mobile: "hidden", render: (r) => <ResolutionFile row={r} formatDate={formatDate} /> },
-    { key: "pending", header: "Participantes", mobile: "hidden", render: (r) => <Pending count={r.pendingConfirmations} /> },
-    {
-      key: "action",
-      header: "",
-      className: "w-px text-right",
-      render: (r) => (
-        <FileUploadButton
-          label={r.fileName ? "Reemplazar" : "Cargar resolución"}
-          emphasis={r.fileName ? "quiet" : "primary"}
-          onSelect={(fileName) => onUpload(r, fileName)}
-        />
-      ),
-    },
+    { key: "macro", header: "Macrorregión", className: "w-[30%]", mobile: "hidden", render: (r) => <span className="font-semibold text-neutral-950">{r.name}</span> },
+    { key: "file", header: "Resolución", mobile: "hidden", render: (r) => <ResolutionStatusBadge uploaded={r.hasResolution} /> },
+    { key: "action", header: "", className: "w-px text-right", mobile: "hidden", render: actions },
   ];
-  return <DataTable columns={columns} rows={rows} getRowKey={(r) => r.macro} />;
+  return <DataTable columns={columns} rows={rows} getRowKey={(r) => r.id} />;
 }
